@@ -1,0 +1,103 @@
+0.9.6.2:
+- Fixed Bug: Addon setting "nofify update" was missing its text
+
+0.9.6.1:
+- Fix: Hopefully the double userdata fix also works on linux now.
+
+0.9.6:
+- Uses normal icon/fanart again. (if you liked the newyear art better, you can still find it in the root)
+- Added Feature: Only grab the last X videos instead of grabbing all videos from the channel / playlist
+- Completely redid the way the service works, making different updating rules for each playlist possible
+- Added Feature: Set frequency of updates for each playlist seperately
+- Added Feature: Set desired day of the week for the updating of playlists
+- Added Feature: Set desired time of the day for the updating of playlists
+- Added Feature: song_fallback: video title (original). Just use the original video title as the song title, just as it is on youtube.
+- Added Feature: Creates artist.nfo & artwork (unfortunatly kodi does not seem to grab these. Perhaps some skins will)
+- Added: You can turn on/off the notify message when a playlist gets updated
+- Added: TV Fanart also saved in a subdir called extrafanart
+- Added: TV .strm & .nfo files are now stored in subdirectories of their season
+- Fixed Bug: Unicode error when playing videos
+- Fixed Bug: Unicode file paths (japanese characters etc work)
+- Fix: Support for smb:// paths
+- Fix: When song_fallback is set to video title / video title (original) & artist_recognisition is set to hardcoded, just those values will be used. No further stripping or altering of the artist / song will be done
+- Fix: special://profile is now used (fix for double userdata/userdata included :S)
+- Fix: Changed service start from startup to login
+- Fix: Since the googleoathclient module is fixed, ytlibrary can depend on that now and loses its own oathclient.
+- LOTS of small fixes & little changes
+
+
+0.9.5.1:
+- Fixed Bug: Images (folder.jpg etc.) will not be downloaded everytime the playlist is updated.
+- Fixed Error: If the youtube server is not connectable, it will retry in 15 seconds with SSL disabled
+- Fixed Error: division by zero error whith playback on video on some devices
+- Fixed Error: If images are not downloadable with https://, it will try to download with http://
+- Fixed some other small things & bugs
+
+0.9.5 - Happy New Year!
+- Now works with youtube-dl instead of pafy to get video url (This makes VEVO video playback possible as well)
+
+- Added Feature: MusicVideo Support:
+	Added MusicVideo Features:
+	- Guess artist - song from youtube video/description
+	- Use playlist name, video channel name, hardcoded as Artist fallback
+	- Use video title as Song title fallback
+	- Guess Album from video title/description
+	- Fallback on hardcoded album
+	- Use video description, playlist description or a hardcoded Plot as plot (description of the music video)
+	- Guess Year from video title/description
+	- Use published year or a hardcoded year as year fallback
+	- Option to not add (skip the video) if recognizition of any tag fails
+	- Auto tags Audio-only videos as 'audio'
+	- Auto tags Live vidoes as 'live'
+	- Auto tags Lyric videos as 'lyrics'
+- Added Feature: Basic Mode. If the settings dazzle you, this is the setting for you. You don't get to alter things much tho.
+- Added Feature: Normal Mode (enabled by default). Some options are still hidden.
+- Added Feature: Expert Mode. All options are available.
+- Added Feature: defaultsetting for Tags
+- Fixed Bug: Some defaultsettings for TV were not working
+
+0.9.4.1
+- Fixed Bug: Tags would error if only one was specified
+- Fixed Bug: min-/maxlength now behaving as HH:MM (was MM:SS)
+- exclude(words) is now case-insensitive & searches description of the video as well
+
+0.9.4
+- Added Feature: Tags
+- Added Feature: s02e12 / 02x12 from the youtube vid title as your season/episode numbering
+- Added Feature: You can change the publication date of the show
+- Added Feature: You can now set default settings for playlists (shows) you add
+- Fixed Error: when adding youtube channel without TV Channel Banner
+- Fixed Error: when playing vids from library when not retrieving meta information from database
+- Fixed Bug: min-/maxlength is ignored
+- Fixed Bug: Episodenr listing will be deleted if you refresh a playlist (episodenumbering will be reset)
+- Fixed Bug: Videos longer than 1 hour returned a wrong runtime of minutes
+- Fixed Bug: Scraping stopped at a Deleted Video
+- removetitle is now case-insensitive
+
+v0.9.3
+- Fixed delta_time error on Android (python 2.6)
+
+v0.9.2
+- Added support for Android (python 2.6)
+
+v0.9.1
+- Removed .git folder & removed xml_declaration, so hopefully systems running python 2.6< will work to
+
+0.9.0 - First Public Release
+
+Features:
+- Rips entire youtube playlists to the Kodi Library
+- Creates NFO & STRM files (tvshow.nfo & [ep].nfo, [ep].strm)
+- Grabs artwork (fanart, banner, thumbnail) for the (youtube) tvshow
+- Grabs artwork (thumbnail) for each episode
+- Automatically fills in titles & descriptions for tvshow & episodes
+- Automatically grabs airdate for tvshow & episodes
+- Can set title for (youtube) tv show
+- Can set genres for (youtube) tv show
+- Automatically generates nice looking season numbering (year, number, regex) & episode numbering (default, playlist position, monthday, monthdayhour, monthdayhourminute, number, regex)
+- Can remove & strip text from titles and descriptions (text, regex)
+- Only rips videos you dont have yet. Videos already in the library are not rescanned everytime.
+- Has a Service that will scan new episodes automatically into the library
+- Plays Youtube Videos (max. 720p now)
+- Marks episodes as watched automatically
+- Remembers where you ended the episode, so you can choose to resume the video

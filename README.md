@@ -1,2 +1,1 @@
-# repo.plugin.video.youtubelibrary
-Repository of Youtubelibrary.nl
+Kodi Repository for plugin.video.youtubelibrary

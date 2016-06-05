@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <addon id="sleuteltjes.addons" name="Sleuteltjes Addons" version="0.1.0" provider-name="Sleuteltje">
+        <requires>
+            <import addon="xbmc.addon" version="12.0.0"/>
+        </requires>
+        <extension point="xbmc.addon.repository" name="Sleuteltjes Addons">
+            <info compressed="false">https://raw.githubusercontent.com/Sleuteltje/repo.plugin.video.youtubelibrary/_repo/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/Sleuteltje/repo.plugin.video.youtubelibrary/_repo/addons.xml.md5</checksum>
+            <datadir zip="true">https://raw.githubusercontent.com/Sleuteltje/repo.plugin.video.youtubelibrary/_repo/</datadir>
+            <hashes>false</hashes>
+        </extension>
+        <extension point="xbmc.addon.metadata">
+            <summary>Addons I've created all in one repro!</summary>
+            <description>Addons by Sleuteltje. Home to Youtubelibrary.</description>
+            <platform>all</platform>
+    </extension>
+</addon>
