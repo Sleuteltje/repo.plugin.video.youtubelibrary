@@ -31,9 +31,9 @@ from resources.lib import dev
 
 
 def build_url():
-    url = '?api_token='+vars.__settings__.getSetting('api_token')+'&lang=int'
+    url = '?api_token='+vars.__settings__.getSetting('api_token')+'&language='
     if vars.__settings__.getSetting('api_language') != 'none':
-        url += '+'+vars.__settings__.getSetting('api_language')    
+        url += vars.__settings__.getSetting('api_language')    
     if vars.__settings__.getSetting('api_language2') != 'none':
         url += '+'+vars.__settings__.getSetting('api_language2')
     if vars.__settings__.getSetting('api_language3') != 'none':
