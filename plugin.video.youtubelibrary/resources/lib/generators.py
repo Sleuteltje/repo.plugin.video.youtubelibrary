@@ -95,7 +95,7 @@ def episode_season(vid, settings, totalresults = False, playlist = False):
     if se[:6] == 'regex(':
         match = reg(se, vid['snippet']['title'])
         if match != None:
-            season = match[0]
+            season = match
             found = True
     if found == False: #If the episode has not been found yet, either it is not regex, or regex failed
         if se == 'year': #We want to save the season of the video as the year it is published
@@ -144,6 +144,17 @@ def episode_season(vid, settings, totalresults = False, playlist = False):
         else:
             dev.log('Invalid episode setting in settings.xml! '+ep)
             episode = '0'
+    
+    #Fix for regex season / ep recognisition
+    if se[:5] == 'regex' and ep[:5] == 'regex':
+        if season != '0' and episode == '0':
+            dev.log('Found a season, but not an episode. Make it a season special')
+            episode = season
+            season = '0'
+        elif season == '0' and episode != '0':
+            dev.log('Found an episode, but not a season. Make it a normal special 0x0')
+            episode = '0'
+        
             
     return season, episode, vid
 

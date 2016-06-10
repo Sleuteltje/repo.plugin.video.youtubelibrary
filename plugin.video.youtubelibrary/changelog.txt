@@ -3,6 +3,7 @@
 - Youtubelibrary now has its repo! Install via the repo to get auto updates!
 - Added Feature: You can now also search & add playlists by their name, id or even their url!
 - Added Feature: You can now browse more then 50 playlists from a channel
+- Fix: When using regex in season/episode, it will now handle specials correctly when failing to recognize one of the two.
 
 0.9.6.2:
 - Fixed Bug: Addon setting "nofify update" was missing its text
