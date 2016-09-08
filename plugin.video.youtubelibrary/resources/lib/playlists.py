@@ -40,6 +40,12 @@ def disp_setting(setting, title, description, level=0):
         if setting == 'published':
             d = ytube.convert_published(val)
             val = d['day']+'-'+d['month']+'-'+d['year']
+        elif setting == 'search_imdb': #Search_IMDB (movies setting)
+            options = ['Yes, fallback on addon settings', 'Yes, dont add if imdb fails', 'No, just use addon settings']
+            val = options[int(val)]
+        elif setting == 'use_ytimage': 
+            options = ['Only if no image found on IMDB', 'Always', 'Dont add if no image is found on IMDB', 'Never']
+            val = options[int(val)]
     if val == None or val == 'None':
         val = ''
     url = dev.build_url({'mode': 'editPlaylist', 'id': plid, 'set': setting, 'type': pltype})
@@ -57,13 +63,16 @@ def disp_bool_setting(setting, title, description, level=0):
     val = None
     if elem.find(setting) != None:
         val = elem.find(setting).text
-    if val == 'true':
+    if val == 'true' or val == '1':
         val = '[COLOR green]ON[/COLOR]'
     else:
         val = '[COLOR red]OFF[/COLOR]'
     url = dev.build_url({'mode': 'editPlaylist', 'id': plid, 'set': setting, 'type': pltype})
     dev.adddir('[COLOR blue]'+title+':[/COLOR] '+val, url, gear, fanart, description)
 
+
+    
+    
 
 #Displays and saves the user input if something from editplaylist should be set
 def setEditPlaylist(id, set, type=''):
@@ -169,6 +178,10 @@ def setEditPlaylist(id, set, type=''):
         options = ['every 4 hours', 'every 8 hours', 'every 12 hours', 'every 24 hours', 'every 168 hours', 'every day', 'every sunday', 'every monday', 'every tuesday', 'every wednesday', 'every thursday', 'every friday', 'every saturday']
         i = xbmcgui.Dialog().select('Choose when to update this playlist', options)
         i = options[i]
+    elif set == 'update_gmt':
+        options = dev.timezones()
+        i = xbmcgui.Dialog().select('In which timezone should this list be updated?', options)
+        i = options[i]
         #m_xml.xml_update_playlist_setting(id, set, i) #Save the new setting
     elif set == 'minlength':
         i = xbmcgui.Dialog().numeric(2, 'Set a minimum length for videos')
@@ -176,6 +189,28 @@ def setEditPlaylist(id, set, type=''):
         i = xbmcgui.Dialog().numeric(2, 'Set a maximum length for videos')
     elif set == 'updateat':
         i = xbmcgui.Dialog().numeric(2, 'Update this playlist on this time of the day')
+    elif set == 'reverse':
+        i = xbmcgui.Dialog().yesno("Reverse Playlist", "Reverse this playlist? \n\r (Only use this if the playlist is sorted oldest->newest and you cant find a playlist sorted newest->oldest)")
+        i = str(i)
+    
+    
+    ###MOVIES
+    elif set == 'search_imdb':
+        i = xbmcgui.Dialog().select(dev.lang(30504), ['Yes, fallback on addon settings', 'Yes, dont add if imdb fails', 'No, just use addon settings'])
+        i = str(i)
+    elif set == 'imdb_match_cutoff':
+        options = ['25', '40', '50', '60', '70', '75', '80', '85', '90', '95', '99', '100']
+        i = xbmcgui.Dialog().select(dev.lang(30505), options)
+        i = options[i]
+    elif set == 'use_ytimage':
+        options = ['Only if no image found on IMDB', 'Always', 'Dont add if no image is found on IMDB', 'Never']
+        i = xbmcgui.Dialog().select(dev.lang(30520), options)
+        i = str(i)
+    elif set == 'smart_search':
+        i = xbmcgui.Dialog().yesno("Smart Search", "Enable Smart Search?")
+        i = str(i)
+
+    
     
     ###MUSIC VIDEOS
     #genre
@@ -372,7 +407,7 @@ def editPlaylist(id, type=''):
             if elem.find('artist').text == 'hardcoded' or elem.find('artist_fallback').text == 'hardcoded':
                 disp_setting('artist_hardcoded', 'Artist Hardcoded', dev.lang(31901))
             #albums
-            disp_setting('album', 'album', 'album Recognizition', 1)
+            disp_setting('album', 'album', 'Album Recognizition', 1)
             album = elem.find('album').text
             if album != 'hardcoded' and album != 'video title' and album != 'playlist channelname' and album != 'published year' and album != 'video channelname' and album != 'artist + published year' and album != 'video description':
                 disp_setting('album_fallback', 'album Fallback', dev.lang(31900), 1)
@@ -396,17 +431,32 @@ def editPlaylist(id, type=''):
         else:
             #Genre
             disp_setting('genre', 'Genre', 'Settings as displayed in Kodi. For multiple genres use genre1 / genre2 / genre3 (note the space between each / )')
+        
+        ###MOVIES
+        if type == 'movies':
+            disp_setting('set', dev.lang(30519), 'The set the movies will belong to in the Kodi library')
+            if vars.mode > 1: #Expert mode
+                disp_bool_setting('smart_search', dev.lang(30521), 'Use some smart filters to strip out must unwanted stuff from titles. Also try to guess info like Director and year in the process.')
+            disp_setting('search_imdb', dev.lang(30504), 'Do you want to try to find a match on imdb? And if so, what to do if no match is found?')
+            if vars.mode > 1:
+                disp_setting('imdb_match_cutoff', dev.lang(30505), 'How much of a percentage does the title need to match the IMDB result?')
+            disp_setting('use_ytimage', dev.lang(30520), 'In case of an IMDB match, would you still like to use the Youtube Image as the Poster image?')
+        
+        
         #Published
         if type == '' or type == 'tv':
             disp_setting('published', 'Published', 'The date the show first aired', 1)
         #WriteNFO
         if vars.mode > 0:
+            disp_bool_setting('reverse', dev.lang(30522), 'Reverse this playlist? \n\r (Only use this if the playlist is sorted oldest->newest and you cant find a playlist sorted newest->oldest)')
+        
             #Only get last X videos
             disp_setting('onlygrab', 'Grab last X videos', 'Instead of adding all old episodes, only add the last X episodes')
             
             
             disp_setting('updateevery', 'Update every', 'Update this playlist at a specific time interval or day')
             disp_setting('updateat', 'Update at', 'Update this playlist at a specific time if updateevery is set to a specific day.  (This setting is ignored when "update every" is set to every X hours)')
+            disp_setting('update_gmt', 'Timezone', 'Set the timezone for this playlist. YTlibrary will calculate the time to update according to the difference to your current timezone. (This setting is ignored when "update every" is set to every X hours)')
         
             url = dev.build_url({'mode': 'editPlaylist', 'id': id, 'set': 'writenfo', 'type': type})
             dev.adddir('[COLOR blue]Write NFO:[/COLOR] '+elem.find('writenfo').text, url, gear, fanart, 'NFO Files are needed for Kodi to recognise the youtube episodes as episodes, so it can scan it in its library. If you only want strm files, set this to No')
@@ -451,7 +501,7 @@ Set to a [COLOR blue]number[/COLOR] to have a hardcoded episode for every episod
 Use [COLOR blue]regex[/COLOR] to type in a regular expression. Please use regex(yourregexhere). If your regex fails to recognise a episode it will fallback on calling it 0.'
             """
             disp_setting('episode', 'Episode recognisition', description)
-        if vars.mode > 0:
+        if vars.mode > 0: #Normal mode or higher
             #Stripdescription
             disp_setting('stripdescription', 'Strip Description', 'Deletes every text in the description from and including the text filled in here. For instance, if a channel always has a long text in its description thats always the same, like: Check out our website (..). You fill that line in here, and only the part before that line will be included in the description of episodes. For multiple lines to scan for put them between |')
             #removedescription
@@ -460,7 +510,7 @@ Use [COLOR blue]regex[/COLOR] to type in a regular expression. Please use regex(
             disp_setting('striptitle', 'Strip Title', 'Same as stripdescription but for the title')
             #Removetitle
             disp_setting('removetitle', 'Remove Title', 'Same as removedescription but for the title')
-
+        if vars.mode > 1: #Expert mode or higher
             #Overwritefolder
             disp_setting('overwritefolder', 'Folder', 'Use this directory to write the strm & nfo files to. If this is not filled in it will use the title as it will be displayed in the Addon and the Kodi Library')
         
@@ -502,6 +552,10 @@ def delete_playlist(id, type=''):
                     else:
                         folder = dev.legal_filename(folder)
                     movieLibrary = vars.tv_folder #Use the directory from the addon settings
+                    if type == 'musicvideo':
+                        movieLibrary = vars.musicvideo_folder
+                    elif type == 'movies':
+                        movieLibrary = vars.movies_folder
                     dir = os.path.join(movieLibrary, folder) #Set the folder to the maindir/dir
                     
                     success = shutil.rmtree(dir, ignore_errors=True) #Remove the directory
@@ -537,15 +591,17 @@ def refresh_playlist(id, type=''):
                 movieLibrary = vars.tv_folder #Use the directory from the addon settings
                 if type == 'musicvideo':
                     movieLibrary = vars.musicvideo_folder
+                elif type == 'movies':
+                    movieLibrary = vars.movies_folder
                 dir = os.path.join(movieLibrary, folder) #Set the folder to the maindir/dir
                 
                 success = shutil.rmtree(dir, ignore_errors=True) #Remove the directory
-                if vars.update_videolibrary == "true" and type=='':
-                    update_dir = vars.tv_folder_path
-                    if type == 'musicvideo':
-                        update_dir = vars.musicvideo_folder_path
-                    dev.log('Updating video library is enabled. Cleaning librarys directory %s' % update_dir, True)
-                    xbmc.executebuiltin('xbmc.updatelibrary(Video,'+update_dir+')')
+                #if vars.update_videolibrary == "true" and type=='':
+                #    update_dir = vars.tv_folder_path
+                #    if type == 'musicvideo':
+                #        update_dir = vars.musicvideo_folder_path
+                #    dev.log('Updating video library is enabled. Cleaning librarys directory %s' % update_dir, True)
+                #    xbmc.executebuiltin('xbmc.updatelibrary(Video,'+update_dir+')')
 
                 xbmcgui.Dialog().ok('Removed from library', 'Deleted the previous videos from your library (You should clean your library, otherwise they will still show in your library)')
             editPlaylist(id, type=type) #Load the editplaylist view

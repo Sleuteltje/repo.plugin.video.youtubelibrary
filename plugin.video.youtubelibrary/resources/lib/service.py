@@ -26,7 +26,7 @@ from resources.lib import ytube
 
 
 #Outputs the updatevery setting in normal 
-def updateevery_normal(t, time, scansince):
+def updateevery_normal(t, time, scansince, update_gmt):
     import datetime
     if time is None:
         hour = 23
@@ -76,7 +76,7 @@ def updateevery_normal(t, time, scansince):
             y = today - datetime.timedelta(7+weekday-6)
     
     if t == 'every day':
-        #See if the playlist has been scaneed since yesterday
+        #See if the playlist has been scanned since yesterday
         y = today - datetime.timedelta(days=1)
         y = y.replace(hour=hour, minute=minute)
         
@@ -84,8 +84,16 @@ def updateevery_normal(t, time, scansince):
             dev.log('The time of yesterday is already scanned, so we will send the date&time of today')
             y = today
     
-    dev.log(t+' ago is: '+str(y.replace(hour=hour, minute=minute)))
-    return y.replace(hour=hour, minute=minute)
+    y = y.replace(hour=hour, minute=minute)
+    dev.log(t+' ago is: '+str(y))
+    
+    
+
+    if update_gmt is not None and update_gmt is not 99 and update_gmt is not 98:   
+        y = y + datetime.timedelta(hours = update_gmt) #Offset the time according to the current system timezone and which timezone it should be updated to
+        dev.log('with gmt offset ('+str(update_gmt)+'): '+str(y))
+
+    return y
 
 
 #Writes the nfo & strm files for all playlists
@@ -104,8 +112,14 @@ def update_playlists(type=''):
                 #Grab the settings from this playlist
                 #Loads the correct information from the settings.xml
                 #settings = m_xml.xml_get_elem('playlists/playlist', 'playlist', {'id': id}, type=type)
+                #Get the current GMT offset and consider this when updating
+                import datetime      
+                import time
+
+                
                 #Grab when this playlist should be updated
                 updateat = '23:59'
+                update_gmt = 99
                 if child.find('updateevery') is None:
                     dev.log('NOTICE: Playlist should have an instruction when to be updated!. Asssumed default (12 hours) for now', 1)
                     updateevery = 'every 12 hours'
@@ -113,10 +127,16 @@ def update_playlists(type=''):
                     updateevery = child.find('updateevery').text
                     if child.find('updateat') is not None:
                         updateat = child.find('updateat').text
+                        if child.find('update_gmt') is not None:
+                            if child.find('update_gmt').text is not '':
+                                update_gmt = dev.timezones(child.find('update_gmt').text)
+                            
+             
+                
                 
                 
                 #Check when this playlist was last updated, and if it is time for this playlist to be updated again
-                import datetime
+                
                 try:
                     s = child.attrib['scansince']
                     scansince = datetime.datetime.strptime(s,"%d/%m/%Y %H:%M:%S")
@@ -124,6 +144,12 @@ def update_playlists(type=''):
                     scansince = datetime.datetime.now() - datetime.timedelta(days=3*365)
                 timenow = datetime.datetime.now()
                 dev.log('Playlist last scanned on: '+str(scansince)+', now: '+str(timenow), 1)
+                if update_gmt is not None and update_gmt is not 99 and update_gmt is not 98: #If update_gmt is set to any other then the own timezone, consider this when calculating when the playlist should update
+                    offset = time.timezone if (time.localtime().tm_isdst == 0) else time.altzone
+                    offset = offset / 60 / 60 * -1
+                    timenow = timenow + datetime.timedelta(hours = offset)
+                    scansince = scansince + datetime.timedelta(hours = offset)
+                    dev.log('UCT timecorrection (because update_gmt is set): '+str(scansince)+', now: '+str(timenow), 1)
                 #diff = (timenow-scansince).total_seconds()
                 
                 
@@ -131,7 +157,7 @@ def update_playlists(type=''):
                 #dev.log('Difference from last scan is '+str(diff))
                 
                 #Get when this playlist should have last been updated
-                should_update = updateevery_normal(updateevery, updateat, scansince)
+                should_update = updateevery_normal(updateevery, updateat, scansince, update_gmt)
                 
                 #dev.log('The difference between should_update & scansince: '+str(dev.timedelta_total_seconds(should_update-scansince)))
                 if dev.timedelta_total_seconds(should_update-scansince) > 0:
@@ -164,7 +190,9 @@ def update_playlists(type=''):
         update_dir = vars.tv_folder_path
         if type == 'musicvideo':
             update_dir = vars.musicvideo_folder_path
-        dev.log('Updating video library is enabled. Updating librarys directory %s' % update_dir, True)
+        elif type == 'movies':
+            update_dir = vars.movies_folder_path
+        dev.log('Updating video library is enabled. Updating '+type+' librarys directory %s' % update_dir, True)
         xbmc.executebuiltin('xbmc.updatelibrary(Video,'+update_dir+')')
         
 #Writes the nfo & strm files for the given playlist
@@ -190,7 +218,8 @@ def update_playlist(id, type=''):
             elif type == 'musicvideo':
                 generators.write_artist_nfo(folder, settings)
         
-        update_playlist_vids(id, folder, settings, type=type)
+        if update_playlist_vids(id, folder, settings, type=type) == False:
+            return False #something failed while updating the videos of the playlist
         
         #Save the time this playlist got updated in the xml
         import datetime
@@ -217,20 +246,47 @@ def update_playlist_vids(id, folder, settings, nextpage=False, firstvid = False,
     #First we are going to collect all youtube videos until we come across a list containing a videoId we already got
     uptodate = False
     times = 0 #keep track how many times we grabbed yt videos
+    reverse = '0'
+    if settings.find('reverse') is not None:
+        reverse = settings.find('reverse').text
+        total_last_time = settings.find('lastvideoId').text
+        if total_last_time == '' or total_last_time == None:
+            total_last_time = '0'
+        total_last_time = int(total_last_time)
+            
+
+    
     while uptodate == False:
         all_vidids = []
         
         resp = ytube.vids_by_playlist(id, nextpage) #Grab the videos belonging to this playlist
+        if resp == False:
+            return False #Something failed while retrieving the playlist
+        amount = int(resp['pageInfo']['totalResults'])
         vids = resp.get("items", [])
-        for vid in vids:
-            if onlygrab <= times:
-                #We have grabbed as many videos as allowed by the setting onlygrab
-                uptodate = True
-                continue#continue to the next video in the list
+        
+        if reverse == '1' and times == 0:
+            m_xml.xml_update_playlist_setting(id, 'lastvideoId', str(amount), type=type) #Update the amount of videos to the current one
+            if total_last_time < amount: #There are more videos in the playlist now, so time to update
+                dev.log('Reversed is enabled and there are more videos ('+str(amount)+' vs '+str(total_last_time)+') then last time.')
+            else:
+                dev.log('Reversed is enabled, but there are no more videos ('+str(amount)+' vs '+str(total_last_time)+') then last time.')
+                return amount #No more videos then last time, so leave it at this
+            if amount > 5000:
+                dev.log('This playlist is way to big (more then 5000 videos) to be reversed')
+                return amount
+        
+        if onlygrab <= times:
+            #We have grabbed as many videos as allowed by the setting onlygrab
+            uptodate = True
+            break#quit updating the list
             
+        
+        for vid in vids:
             if m_xml.episode_exists(id, vid['contentDetails']['videoId'], type=type):
-                #This list contains a videoId we already got, assume we are up to date
-                uptodate = True
+                if reverse != '1':
+                    #This list contains a videoId we already got, assume we are up to date
+                    uptodate = True
                 continue #continue to the next video in the list
             
             if vid['snippet']['title'].lower() != 'private video' and vid['snippet']['title'].lower() != 'deleted video' and vid['snippet']['description'].lower() != 'this video is unavailable.':
@@ -252,7 +308,11 @@ def update_playlist_vids(id, folder, settings, nextpage=False, firstvid = False,
             #update_playlist_vids(id, folder, settings, resp['nextPageToken'], firstvid)
         times = times+1
     
+    dev.log('')
+    dev.log('')
     dev.log('( ._.)~~~~~~~~~~ DONE GRABBING VIDS FROM YOUTUBE FOR :'+settings.find('title').text+' ~~~~~~~~~~(._. )')
+    dev.log('')
+    dev.log('')
     ##Grab settings from the settings.xml for this playlist
     minlength = settings.find('minlength').text
     maxlength = settings.find('maxlength').text
@@ -272,10 +332,12 @@ def update_playlist_vids(id, folder, settings, nextpage=False, firstvid = False,
         maxlength = None    
 
     
-        
+    if reverse == '1':
+        all_vids = list(reversed(all_vids))
     
-    ##Loop through all 50< vids and check with filters if we should add it
-    for vid in reversed(all_vids):    
+    ##Loop through all vids and check with filters if we should add it
+    for vid in reversed(all_vids): 
+        dev.log('')
         #Check if we already had this video, if so we should skip it
         if m_xml.episode_exists(id, vid['contentDetails']['videoId'], type=type):
             dev.log('Episode '+vid['contentDetails']['videoId']+' is already scanned into the library')
@@ -323,6 +385,27 @@ def update_playlist_vids(id, folder, settings, nextpage=False, firstvid = False,
             season = musicvideo_info['album']
             if season == '':
                 season = musicvideo_info['artist']
+        ##Movies
+        elif type == 'movies':
+            #Prepare the title as best as we can for the imdb search and stuff
+            #title = vid['snippet']['title']
+            #description = vid['snippet']['description']
+            #title = removetitle(title, settings.find('removetitle').text)
+            #title = striptitle(title, settings.find('striptitle').text)
+            
+            #if settings.find('smart_search') == '2':
+                #title, description = generators.smart_search(title, description, vid, settings)
+            
+            filename = vid['snippet']['title'] #Create the filename for the .strm & .nfo file
+            
+            if settings.find('writenfo').text != 'no':
+                create_strm = generators.write_nfo(filename, folder, vid, settings, duration = duration[vid['contentDetails']['videoId']], type=type) #Write the nfo file for this episode
+                if create_strm is False:
+                    m_xml.playlist_add_episode(id, '1', vid['contentDetails']['videoId'], type=type) #Add it to the episode list, so it doesnt get picked up again
+                    continue #Skip this video, it did not make it past the filters
+            
+            generators.write_strm(filename, folder, vid['contentDetails']['videoId'], type=type) #Write the strm file for this episode
+            season = '1'
             
             
         #Add this episode to the episodenr/playlist.xml file so we can remember we scanned this episode already
@@ -337,7 +420,9 @@ def update_playlist_vids(id, folder, settings, nextpage=False, firstvid = False,
             m_xml.xml_update_playlist_setting(id, 'lastvideoId', firstvid) #Set the lastvideoId to this videoId so the playlist remembers the last video it has. This will save on API calls, since it will quit when it comes across a video that already has been set
     '''
     dev.log('( ._.)========== Done ripping videos from playlist '+settings.find('title').text+' (ID: '+id+') ==========(._. )')
-
+    dev.log('\n\n\n\n')
+    return amount
+    
 ##Helper Functions to check requirements of a youtube video according to the playlist settings
 #Check onlyinclude
     #vid : The vid from the youtube response its about

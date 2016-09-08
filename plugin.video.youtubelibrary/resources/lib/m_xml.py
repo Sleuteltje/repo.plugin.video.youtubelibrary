@@ -18,6 +18,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #For XML Reading & Writing
 import xbmcvfs
+import xbmcgui
 import os
 
 from xml.etree import ElementTree
@@ -39,22 +40,46 @@ def xml_get(type=''):
     file=dev.typeXml(type)
     dev.log('XML_get('+type+','+file+')')
     global document #Set the document variable as global, so every function can reach it
-    document = ElementTree.parse( vars.settingsPath+file )
+    try:
+        document = ElementTree.parse( vars.settingsPath+file )
+    except Exception:
+        xbmcgui.Dialog().ok("ERROR: "+file+" got corrupted", "ERROR!: "+file+" got corrupted. Please report this error to the addon developer on youtubelibrary.nl or the kodi forums. Luckily a backup has been created automatically before.")
+        dev.log('ERROR: '+file+' got corrupted.', 1)
+        raise ValueError(output_file+' got corrupted! Best to quit here')
+        return False
+    return document
+    
     
 # Converts the elementtree element to prettified xml and stores it in the settings.xml file
 def write_xml(elem, dir='', output='', type=''):
     if output == '':
         output = dev.typeXml(type)
-    dev.log('write_xml('+type+','+output+')')
-
+    dev.log('write_xml('+type+','+output+').')
+    
+    
     xbmcvfs.mkdir(vars.settingsPath) #Create the settings dir if it does not exist already
     if dir is not '': xbmcvfs.mkdir(vars.settingsPath+dir) #Create the settings dir if it does not exist already
     #Write these settings to a .xml file in the addonfolder
     output_file = os.path.join(vars.settingsPath+dir, output) #Set the outputfile to settings.xml
-
+    
+    #Creating a backup of the .xml file (in case it gets corrupted)
+    backupfile = os.path.join(vars.settingsPath+dir, output+'.backup')
+    if xbmcvfs.exists(output_file):
+        if xbmcvfs.copy(output_file, backupfile):
+            dev.log('Created a backup of the xml file at: '+backupfile)
+        else:
+            dev.log('Failed to create a backup of the xml file at: '+backupfile)
+    else:
+        dev.log(output_file+' could not be found, so not able to create a backup')
+    
+    
     indent( elem ) #Prettify the xml so its not on one line
     tree = ElementTree.ElementTree( elem ) #Convert the xml back to an element
     tree.write(output_file) #Save the XML in the settings file
+    
+    #For backup purposes, check if the xml got corrupted by writing just now
+    if xml_get(type) is False:
+        dev.log('corrupt .xml file')
     
 
 #Pretty Print the xml    
@@ -189,54 +214,95 @@ def xml_add_playlist(id, type='', api=''):
     
 
 def api_xml_build_new_playlist(api, type=''):
-    #### Build new playlist (tv, musicvideo) ###
+    #### Build new playlist (tv, musicvideo, movies) ###
+    #Build the playlist
+    playlist = {
+        'id'    : api['ytplaylistid'],
+        'enabled'      : 'yes',
+        'settings'      : {
+            'title'                   : api['title'],
+            'channel'            : api['channel'],
+            'channelId'            : api['channelId'],
+            'description'        : api['description'],
+            'genre'                : api['genre'],
+            'tags'                  : api['tags'],
+            'published'          : api['published'],
+            'reverse'            : api['reverse'],
+            #Art
+            'thumb'               : api['thumb'],
+            'fanart'                : api['fanart'],
+            'banner'              : api['banner'],
+            'epsownfanart'    : 'No',
+            # STRM & NFO Settings
+            'writenfo'             : api['writenfo'],
+            'delete'                : api['delete'],
+            'updateevery'       : api['updateevery'],
+            'updateat'        : api['updateat'],
+            'update_gmt'        : api['update_gmt'],
+            'onlygrab'          : dev.getAddonSetting("default_onlygrab", ''),
+            'keepvideos'        : api['keepvideos'],
+            'overwritefolder'   : api['overwritefolder'],
+            #Filters
+            'minlength'         : api['minlength'],
+            'maxlength'         : api['maxlength'],
+            'excludewords'    : api['excludewords'],
+            'onlyinclude'       : api['onlyinclude'],
+            #NFO information
+            'striptitle'        : api['striptitle'],
+            'removetitle'       : api['removetitle'],
+            'stripdescription' : api['stripdescription'],
+            'removedescription' : api['removedescription'],
+            #Scan Settings
+            'lastvideoId'       : '',
+        }
+    }
+    
     if type=='' or type=='tv':
-        ##Get the default settings from the addon settings
-        writenfo = 'Yes'
-        if dev.getAddonSetting("default_generate_nfo") == "false":
-            writenfo = 'no'
-             
-        #Build the playlist
-        playlist = {
-            'id'    : api['ytplaylistid'],
-            'enabled'      : 'yes',
-            'settings'      : {
-                'type'                  : 'TV',
-                'title'                   : api['title'],
-                'channel'            : api['channel'],
-                'description'        : api['description'],
-                'genre'                : api['genre'],
-                'tags'                  : api['tags'],
-                'published'          : api['published'],
-                #Art
-                'thumb'               : api['thumb'],
-                'fanart'                : api['fanart'],
-                'banner'              : api['banner'],
-                'epsownfanart'    : 'No',
-                # STRM & NFO Settings
-                'writenfo'             : writenfo,
-                'delete'                : api['delete'],
-                'updateevery'       : api['updateevery'],
-                'updateat'        : api['updateat'],
-                'onlygrab'          : dev.getAddonSetting("default_onlygrab", ''),
-                'keepvideos'        : api['keepvideos'],
-                'overwritefolder'   : api['overwritefolder'],
-                #Filters
-                'minlength'         : api['minlength'],
-                'maxlength'         : api['maxlength'],
-                'excludewords'    : api['excludewords'],
-                'onlyinclude'       : api['onlyinclude'],
-                #NFO information
+        settings = {
                 'season'            : api['season'],
                 'episode'           : api['episode'],
-                'striptitle'        : api['striptitle'],
-                'removetitle'       : api['removetitle'],
-                'stripdescription' : api['stripdescription'],
-                'removedescription' : api['removedescription'],
-                #Scan Settings
-                'lastvideoId'       : '',
-            }
         }
+        playlist['settings'].update(settings)
+        return playlist
+    elif type=='musicvideo':
+        settings = {
+                'skip_albums'                    : api['skip_albums'],
+                'skip_lyrics'           : api['skip_lyrics'],
+                'skip_audio'                    : api['skip_audio'],
+                'skip_live'           : api['skip_live'],
+
+                'genre_hardcoded'                    : api['genre_hardcoded'],
+                'genre_fallback'           : api['genre_fallback'],
+
+                'plot'                    : api['plot'],
+                'plot_fallback'           : api['plot_fallback'],
+                'plot_hardcoded'           : api['plot_hardcoded'],
+                
+                'artist'                    : api['artist'],
+                'artist_fallback'           : api['artist_fallback'],
+                'artist_hardcoded'           : api['artist_hardcoded'],
+                
+                'song_fallback'           : api['song_fallback'],
+                
+                'year'                      : api['year'],
+                'year_fallback'           : api['year_fallback'],
+                'year_hardcoded'           : api['year_hardcoded'],
+                
+                'album'                     : api['album'],
+                'album_fallback'           : api['album_fallback'],
+                'album_hardcoded'           : api['album_hardcoded'],
+        }
+        playlist['settings'].update(settings)
+        return playlist
+    elif type=='movies':
+        settings = {
+                'set'            : api['set'],
+                'search_imdb'           : api['search_imdb'],
+                'use_ytimage'           : api['use_ytimage'],
+                'imdb_match_cutoff'           : api['imdb_match_cutoff'],
+                'smart_search'           : api['smart_search'],
+        }
+        playlist['settings'].update(settings)
         return playlist
     return False
     
@@ -320,6 +386,7 @@ def xml_build_new_playlist(id, type=''):
         removetitle = dev.getAddonSetting("default_removetitle", '')
         updateevery = dev.getAddonSetting("default_updateevery", 'every 12 hours')
         updateat = dev.getAddonSetting("default_updateat", '23:59')
+        update_gmt = dev.getAddonSetting("default_update_gmt", '99')
         
         
         #Build the playlist
@@ -330,6 +397,7 @@ def xml_build_new_playlist(id, type=''):
                 'type'                  : 'TV',
                 'title'                   : title,
                 'channel'            : snippet['title'],
+                'channelId' : res['channelId'],
                 'description'        : description,
                 'genre'                : genre,
                 'tags'                  : tags,
@@ -344,6 +412,7 @@ def xml_build_new_playlist(id, type=''):
                 'delete'                : '',
                 'updateevery'       : updateevery,
                 'updateat'        : updateat,
+                'update_gmt'        : update_gmt,
                 'onlygrab'          : dev.getAddonSetting("default_onlygrab", ''),
                 'keepvideos'        : '',
                 'overwritefolder'   : '',
@@ -361,6 +430,80 @@ def xml_build_new_playlist(id, type=''):
                 'removedescription' : removedescription,
                 #Scan Settings
                 'lastvideoId'       : '',
+                'reverse'           : '0',
+            }
+        }
+        return playlist
+    elif type=='movies':
+        ##Get the default settings from the addon settings
+        writenfo = 'Yes'
+        if dev.getAddonSetting("default_movies_generate_nfo") == "false":
+            writenfo = 'no'
+        genre = dev.getAddonSetting("default_movies_genre", '')
+        tags = dev.getAddonSetting("default_movies_tags", 'Youtube')
+        search_imdb = dev.getAddonSetting("default_movies_search_imdb", '2')
+        imdb_match_cutoff = dev.getAddonSetting("default_movies_imdb_match_cutoff", '0.75')
+        use_ytimage = dev.getAddonSetting("default_movies_use_ytimage", '0')
+        minlength = dev.getAddonSetting("default_movies_minlength", '')
+        maxlength = dev.getAddonSetting("default_movies_maxlength", '')
+        onlyinclude = dev.getAddonSetting("default_movies_onlyinclude", '')
+        excludewords = dev.getAddonSetting("default_movies_excludewords", '')
+        stripdescription = dev.getAddonSetting("default_movies_stripdescription", '')
+        removedescription = dev.getAddonSetting("default_movies_removedescription", '')
+        striptitle = dev.getAddonSetting("default_movies_striptitle", '')
+        removetitle = dev.getAddonSetting("default_movies_removetitle", '')
+        updateevery = dev.getAddonSetting("default_movies_updateevery", 'every 12 hours')
+        updateat = dev.getAddonSetting("default_movies_updateat", '23:59')
+        update_gmt = dev.getAddonSetting("default_movies_update_gmt", '99')
+        set = dev.getAddonSetting("default_movies_set", '')
+        smart_search = dev.getAddonSetting("default_movies_smart_search", '1')
+        
+        
+        #Build the playlist
+        playlist = {
+            'id'    : id,
+            'enabled'      : 'no',
+            'settings'      : {
+                'type'                  : 'movies',
+                'title'                   : title,
+                'channel'            : snippet['title'],
+                'channelId' : res['channelId'],
+                'description'        : description,
+                'genre'                : genre,
+                'tags'                  : tags,
+                'set'                   : set,
+                'published'          : snippet['publishedAt'],
+                #Art
+                'thumb'               : thumbnail,
+                'fanart'                : bannerTv,
+                'banner'              : brand['image']['bannerImageUrl'],
+                'epsownfanart'    : 'No',
+                # STRM & NFO Settings
+                'writenfo'             : writenfo,
+                'delete'                : '',
+                'updateevery'       : updateevery,
+                'updateat'        : updateat,
+                'update_gmt'        : update_gmt,
+                'onlygrab'          : dev.getAddonSetting("default_movies_onlygrab", ''),
+                'keepvideos'        : '',
+                'overwritefolder'   : '',
+                #Filters
+                'minlength'         : minlength,
+                'maxlength'         : maxlength,
+                'excludewords'    : excludewords,
+                'onlyinclude'       : onlyinclude,
+                #NFO information
+                'search_imdb'            : search_imdb,
+                'imdb_match_cutoff'           : imdb_match_cutoff,
+                'use_ytimage'           : use_ytimage,
+                'smart_search'          : smart_search,
+                'striptitle'            : striptitle,
+                'removetitle'       : removetitle,
+                'stripdescription' : stripdescription,
+                'removedescription' : removedescription,
+                #Scan Settings
+                'lastvideoId'       : '',
+                'reverse'           : ''
             }
         }
         return playlist
@@ -402,6 +545,7 @@ def xml_build_new_playlist(id, type=''):
         removetitle = dev.getAddonSetting("default_musicvideo_removetitle", '')
         updateevery = dev.getAddonSetting("default_musicvideo_updateevery", 'every 12 hours')
         updateat = dev.getAddonSetting("default_musicvideo_updateat", '23:59')
+        update_gmt = dev.getAddonSetting("default_musicvideo_update_gmt", '99')
         
         #Build the playlist
         playlist = {
@@ -411,6 +555,7 @@ def xml_build_new_playlist(id, type=''):
                 'type'                  : 'MusicVideo',
                 'title'                   : title,
                 'channel'            : snippet['title'],
+                'channelId' : res['channelId'],
                 'description'        : description,
                 'published'          : snippet['publishedAt'],
                 #Library Info
@@ -439,6 +584,7 @@ def xml_build_new_playlist(id, type=''):
                 'writenfo'             : writenfo,
                 'updateevery'       : updateevery,
                 'updateat'        : updateat,
+                'update_gmt'        : update_gmt,
                 'onlygrab'          : dev.getAddonSetting("default_musicvideo_onlygrab", ''),
                 'delete'                : '',
                 'keepvideos'        : '',
@@ -460,6 +606,7 @@ def xml_build_new_playlist(id, type=''):
                 'removedescription' : removedescription,
                 #Scan Settings
                 'lastvideoId'       : '',
+                'reverse'           : '',
             }
         }
         return playlist
@@ -510,7 +657,7 @@ def xml_update_playlist_setting(id, tag, newsetting, type=''):
         if setting == None:
             #Could not find setting
             dev.log('XML_update_playlist_setting: could not find setting '+tag+' of '+id)
-            #Les create it
+            #Lets create it
             setting = Element(tag)
             setting.text = newsetting
             elem.append(setting)

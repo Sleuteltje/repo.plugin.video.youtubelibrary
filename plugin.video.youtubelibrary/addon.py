@@ -30,6 +30,7 @@ from resources.lib import generators
 from resources.lib import routes    
 from resources.lib import play    
 from resources.lib import playlists  
+from resources.lib import m_imdb  
 
 
 xbmcplugin.setContent(vars.addon_handle, 'episodes')
@@ -52,6 +53,12 @@ if xbmcvfs.exists(os.path.join(vars.settingsPath,"settings_musicvideo.xml")) == 
     xbmcvfs.mkdir(vars.streamsPath+'MusicVideos') #Create the streams musicvideos dir if it does not exist already
     
     m_xml.create_xml('settings_musicvideo.xml')
+if xbmcvfs.exists(os.path.join(vars.settingsPath,"settings_movies.xml")) == False:
+    xbmcgui.Dialog().ok(dev.lang(31103), dev.lang(31106))
+    
+    xbmcvfs.mkdir(vars.streamsPath+'Movies') #Create the streams musicvideos dir if it does not exist already
+    
+    m_xml.create_xml('settings_movies.xml')
 
 ########## ROUTES ##############      
 #Grab which mode the plugin is in    
@@ -155,6 +162,13 @@ else:
         song = vars.args['song'][0] #Grab the song
         filename = vars.args['filename'][0] #Grab the filename
         play.playMusicVid(id, filename, artist, song) #Play the video
+    ## PLAY MOVIE
+    elif mode[0] == "playmovie":
+        dev.log('Mode is PlayMovie')
+        id = vars.args['id'][0] #Grab the vid id which we should be playing
+        filename = vars.args['filename'][0] #Grab the filename
+        folder = vars.args['folder'][0] #Grab the filename
+        play.playVid(id, filename, folder=folder, type='movies') #Play the video
         
 
         
@@ -167,24 +181,43 @@ else:
     ##########################  API
     ##Index
     elif mode[0] == 'ApiIndex':
-        routes.api_index()
+        routes.api_home()
+    ##Index
+    elif mode[0] == 'ApiIndex2':
+        type = vars.args['type'][0]
+        routes.api_index(type)
     elif mode[0] == "ApiAddPlaylist":
         #Display the videos of this playlistID
         id = vars.args['id'][0]
-        routes.apiAddPlaylist(id)
+        type = vars.args['type'][0]
+        routes.apiAddPlaylist(id, type)
     elif mode[0] == 'ApiBrowse':
         api_url = vars.args['api_url'][0]
-        routes.apiBrowse(api_url)
+        type = vars.args['type'][0]
+        routes.apiBrowse(api_url, type)
     elif mode[0] == 'ApiGenres':
         api_url = vars.args['api_url'][0]
-        routes.apiGenres(api_url)
+        type = vars.args['type'][0]
+        routes.apiGenres(api_url, type)
     elif mode[0] == 'ApiTags':
         api_url = vars.args['api_url'][0]
-        routes.apiTags(api_url)
+        type = vars.args['type'][0]
+        routes.apiTags(api_url, type)
     elif mode[0] == 'ApiSearch':
-        routes.apiSearch()
+        type = vars.args['type'][0]
+        routes.apiSearch(type)
     elif mode[0] == 'ApiSearchChannel':
-        routes.apiSearchChannel()
+        type = vars.args['type'][0]
+        routes.apiSearchChannel(type)
+
+
+
+
+
+
+
+    elif mode[0] == 'testIMDB':
+        m_imdb.test()
 
 
 
