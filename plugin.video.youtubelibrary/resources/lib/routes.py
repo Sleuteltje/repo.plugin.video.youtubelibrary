@@ -202,6 +202,8 @@ def show_playlists_by_channel(Channelid, type='', pagetoken='default'):
         
         # Go through each playlist and display the playlist
         for key, value in playlists.iteritems():
+          if value == 'WL' or value == 'HL':
+             continue #The watch later and watch history playlists are not giving their normal id's, so skip them
           #Grab the number of videos to
           pl = ytube.yt_get_playlist_info(value)
           number_vids = str(pl['items'][0]['contentDetails']['itemCount'])
