@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #    Kodi Addon: Youtube Library
 #    Copyright 2015 Sleuteltje
 #
@@ -58,18 +59,7 @@ def update_all_playlists(type=''):
 #Force the updating of 1 playlist
 def update_playlist(type=''):
     id = vars.args['id'][0]
-    xbmcgui.Dialog().notification(vars.__addonname__, 'Updating '+dev.typeName(type)+' Playlist '+id, vars.__icon__, 3000)
-    service.update_playlist(id, type=type)
-    xbmcgui.Dialog().notification(vars.__addonname__, 'Done updating '+dev.typeName(type)+' Playlist '+id, vars.__icon__, 3000)
-    #Should we also update the video library?
-    if vars.update_videolibrary == "true":
-        update_dir = vars.tv_folder_path
-        if type == 'musicvideo':
-            update_dir = vars.musicvideo_folder_path
-        elif type == 'movies':
-            update_dir = vars.movies_folder_path
-        dev.log('Updating video library is enabled. Updating librarys directory %s' % update_dir, True)
-        xbmc.executebuiltin('xbmc.updatelibrary(Video,'+update_dir+')')
+    playlists.update_playlist(id, type=type)
 
 ##Index
 def index():
@@ -176,7 +166,7 @@ def searched_playlist(result, type='', pagetoken=''):
           #videos.append(search_result)
           title = playlist['snippet']['title']
           url = dev.build_url({'mode': 'addPlaylist', 'id': playlist['id']['playlistId'], 'type': type})
-          dev.adddir(title, url, playlist['snippet']['thumbnails']['high']['url'], fanart=playlist['snippet']['thumbnails']['high']['url'], description=dev.lang(31010)+' '+dev.typeName(type)+' \n--------\nPlaylist Description:\n'+playlist['snippet']['description'])
+          dev.adddir(title, url, dev.playlist_highest_thumbnail(playlist), fanart=dev.playlist_highest_thumbnail(playlist), description=dev.lang(31010)+' '+dev.typeName(type)+' \n--------\nPlaylist Description:\n'+playlist['snippet']['description'])
     
     
     if 'prevPageToken' in response:
@@ -209,7 +199,7 @@ def show_playlists_by_channel(Channelid, type='', pagetoken='default'):
           number_vids = str(pl['items'][0]['contentDetails']['itemCount'])
           #videos.append(search_result)
           url = dev.build_url({'mode': 'addPlaylist', 'id': value, 'type': type})
-          dev.adddir(key.capitalize()+' ('+number_vids+')', url, search_response['items'][0]['snippet']['thumbnails']['high']['url'], fanart=search_response['items'][0]['snippet']['thumbnails']['high']['url'], description=dev.lang(31010)+' '+dev.typeName(type)+' \n--------\nPlaylist Description:\n'+search_response['items'][0]['snippet']['description'])
+          dev.adddir(key.capitalize()+' ('+number_vids+')', url,  dev.playlist_highest_thumbnail(search_response['items'][0]), fanart=dev.playlist_highest_thumbnail(search_response['items'][0]), description=dev.lang(31010)+' '+dev.typeName(type)+' \n--------\nPlaylist Description:\n'+search_response['items'][0]['snippet']['description'])
     
     # Grab other playlists this user has created to
     response = ytube.yt_get_playlists_by_channel(Channelid, pagetoken)
@@ -221,7 +211,7 @@ def show_playlists_by_channel(Channelid, type='', pagetoken='default'):
           #videos.append(search_result)
           title = playlist['snippet']['title']+' ('+str(playlist['contentDetails']['itemCount'])+')'
           url = dev.build_url({'mode': 'addPlaylist', 'id': playlist['id'], 'type': type})
-          dev.adddir(title, url, playlist['snippet']['thumbnails']['high']['url'], fanart=playlist['snippet']['thumbnails']['high']['url'], description=dev.lang(31010)+' '+dev.typeName(type)+' \n--------\nPlaylist Description:\n'+playlist['snippet']['description'])
+          dev.adddir(title, url, dev.playlist_highest_thumbnail(playlist), fanart= dev.playlist_highest_thumbnail(playlist), description=dev.lang(31010)+' '+dev.typeName(type)+' \n--------\nPlaylist Description:\n'+playlist['snippet']['description'])
     
     
     if 'prevPageToken' in response:
@@ -258,10 +248,12 @@ def manage_playlists(type=''):
             context_url = dev.build_url({'mode': 'updateplaylist', 'id': child.attrib['id'], 'type': type})
             context_url2 = dev.build_url({'mode': 'deletePlaylist', 'id': child.attrib['id'], 'type': type})
             context_url3 = dev.build_url({'mode': 'refreshPlaylist', 'id': child.attrib['id'], 'type': type})
+            context_url4 = dev.build_url({'mode': 'refreshArtwork', 'id': child.attrib['id'], 'type': type})
             commands = []
             commands.append(( dev.lang(31006), 'XBMC.RunPlugin('+context_url+')', ))
             commands.append(( dev.lang(31007), 'XBMC.RunPlugin('+context_url2+')', ))
             commands.append(( dev.lang(31029), 'XBMC.RunPlugin('+context_url3+')', ))
+            commands.append(( dev.lang(31030), 'XBMC.RunPlugin('+context_url4+')', ))
             dev.adddir(child.find('title').text, url, child.find('thumb').text, child.find('fanart').text, child.find('description').text, context=commands)
     xbmcplugin.endOfDirectory(vars.addon_handle)
     
@@ -290,7 +282,12 @@ def deletePlaylist(type=''):
 
 def refreshPlaylist(type=''):
     id = vars.args['id'][0]
-    playlists.refresh_playlist(id, type=type) #Remove this playlist
+    playlists.refresh_playlist(id, type=type) #Refresh this playlist
+    xbmc.executebuiltin("Container.Refresh")
+    
+def refreshArtwork(type=''):
+    id = vars.args['id'][0]
+    playlists.refresh_artwork(id, type=type) #Refresh the artwork of this playlist
     xbmc.executebuiltin("Container.Refresh")
     
 

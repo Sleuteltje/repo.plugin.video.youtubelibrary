@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #    Kodi Addon: Youtube Library
-#    Copyright 2015 Sleuteltje
+#    Copyright 2015-2017 Sleuteltje
 #
 #    This file is part of plugin.video.youtubelibrary
 #    Description: Some functions that will ease up basic kodi functions
@@ -265,3 +265,46 @@ def timezones(convert = False):
 #Puts a string to maximum length
 def cap(s, l):
     return s if len(s)<=l else s[0:l-3]+'...'
+	
+	
+
+
+	
+#Grabs the highest possible thumbnail, and if not found will try to fail gracefully
+#    default – playlist item or search result – is 120px wide and 90px tall. The default thumbnail for a channel is 88px wide and 88px tall.
+#    medium – 320px wide and 180px tall. For a channel, this image is 240px wide and 240px tall.
+#    high – 480px wide and 360px tall. For a channel, this image is 800px wide and 800px tall.
+#    standard – 640px wide and 480px tall.
+#   maxres – The highest resolution version of the thumbnail image. 1280px wide and 720px tall.
+def playlist_highest_thumbnail(playlist):
+	pl = playlist['snippet']['thumbnails']
+	if 'maxres' in pl:
+		return pl['maxres']['url']
+	elif 'standard' in pl:
+		return pl['standard']['url']
+	elif 'high' in pl:
+		return pl['high']['url']
+	elif 'medium' in pl:
+		return pl['medium']['url']
+	elif 'default' in pl:
+		return pl['default']['url']
+	else:
+		return ''#seems no thumbnail is found
+
+#determines the best thumbnail from the youtube response
+def best_thumbnail(res):    
+    thumbnail = False
+    #If this playlist has a thumbnail, use the best possible thumbnail for this playlist
+    if 'thumbnails' in res:
+        #if 'maxres' in res['thumbnails']:
+        #    thumbnail = res['thumbnails']['maxres']
+        if 'standard' in res['thumbnails']:
+            thumbnail = res['thumbnails']['standard']['url']
+        elif 'high' in res['thumbnails']:
+            thumbnail = res['thumbnails']['high']['url']
+        elif 'medium' in res['thumbnails']:
+            thumbnail = res['thumbnails']['medium']['url']
+        elif 'default' in res['thumbnails']:
+            thumbnail = res['thumbnails']['default']['url']
+        log('The thumbnail: '+thumbnail)
+    return thumbnail

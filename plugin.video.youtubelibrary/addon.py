@@ -1,4 +1,5 @@
-﻿#    Kodi Addon: Youtube Library
+﻿# -*- coding: utf-8 -*-
+#    Kodi Addon: Youtube Library
 #    Description: Makes it possible to add youtube channels / playlists as tv shows in your library
 #    Copyright 2015 Sleuteltje
 #
@@ -25,7 +26,7 @@ from resources.lib import bookmarks
 from resources.lib import vars
 from resources.lib import dev    
 from resources.lib import ytube    
-from resources.lib import m_xml    
+from resources.lib import m_xml
 from resources.lib import generators    
 from resources.lib import routes    
 from resources.lib import play    
@@ -107,7 +108,12 @@ else:
     elif mode[0] == "refreshPlaylist":
         dev.log('Mode is refreshPlaylist '+type)
         #Refresh this playlist
-        routes.refreshPlaylist(type=type)
+        routes.refreshPlaylist(type=type)    
+    ## RefreshArtwork
+    elif mode[0] == "refreshArtwork":
+        dev.log('Mode is refreshArtwork '+type)
+        #Refresh the artwork of this playlist
+        routes.refreshArtwork(type=type)
     ## editPlaylist
     elif mode[0] == "editPlaylist":
         dev.log('Mode is editPlaylist '+type)

@@ -1,3 +1,15 @@
+0.9.9:
+- Added Feature: Ability to download youtube videos (upto 4k with sound!) instead of creating stream files (.strm) (NOTE: install ffmpeg to be able to download in 1080p+ and more streams)
+- Added Feature: Ability to regenerate artwork from youtube for playlists.
+- Bugfix: when adding a channel with playlists with incomplete metadata
+- Bugfix: Fixed the display of the poster thumbnail when streaming a youtube video
+- Bugfix: Unicode errors when playing videos with characters like ë
+- Bugfix: Blocked by country no longer blocks the updating of the playlist
+- Lots of other small fixes and adjustments
+
+0.9.8.1:
+- Minor fixes & adjustments
+
 0.9.8:
 - Added Feature (Donor): Add pre-configured Musicvideos playlists from youtubelibrary.nl from within the addon! (Free users can view the playlist settings on youtubelibrary.nl)
 - Added Feature (Donor): Add pre-configured Movies playlists from youtubelibrary.nl from within the addon! (Free users can view the playlist settings on youtubelibrary.nl)

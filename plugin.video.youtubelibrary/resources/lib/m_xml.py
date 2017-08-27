@@ -1,5 +1,6 @@
+# -*- coding: utf-8 -*-
 #    Kodi Addon: Youtube Library
-#    Copyright 2015 Sleuteltje
+#    Copyright 2015-2017 Sleuteltje
 #
 #    This file is part of plugin.video.youtubelibrary
 #    Description: Functions to handle xml files
@@ -308,45 +309,24 @@ def api_xml_build_new_playlist(api, type=''):
     
 def xml_build_new_playlist(id, type=''):
     response = ytube.yt_get_playlist_info(id)
-    #Save relevant information in res
     res = response['items'][0]['snippet']
-    #channelid = res['channelId']
     
-    thumbnail = False
-    #If this playlist has a thumbnail, use the best possible thumbnail for this playlist
-    if 'thumbnails' in res:
-        #if 'maxres' in res['thumbnails']:
-        #    thumbnail = res['thumbnails']['maxres']
-        if 'standard' in res['thumbnails']:
-            thumbnail = res['thumbnails']['standard']['url']
-        elif 'high' in res['thumbnails']:
-            thumbnail = res['thumbnails']['high']['url']
-        elif 'medium' in res['thumbnails']:
-            thumbnail = res['thumbnails']['medium']['url']
-        elif 'default' in res['thumbnails']:
-            thumbnail = res['thumbnails']['default']['url']
-        dev.log('The thumbnail: '+thumbnail)
-        
+    thumbnail = dev.best_thumbnail(res)
     #Grab the channel information 
     response = ytube.yt_get_channel_info(res['channelId'])
     snippet = response['items'][0]['snippet']
     brand = response['items'][0]['brandingSettings']
-    #Check if we should do a better thumbnail
-    #if thumbnail is False:
-    if 'thumbnails' in snippet:
-        #if 'maxres' in snippet['thumbnails']:
-        #    thumbnail = snippet['thumbnails']['maxres']
-        if 'standard' in snippet['thumbnails']:
-            thumbnail = snippet['thumbnails']['standard']['url']
-        elif 'high' in snippet['thumbnails']:
-            thumbnail = snippet['thumbnails']['high']['url']
-        elif 'medium' in snippet['thumbnails']:
-            thumbnail = snippet['thumbnails']['medium']['url']
-        elif 'default' in snippet['thumbnails']:
-            thumbnail = snippet['thumbnails']['default']['url']
-    if thumbnail is False:
+    
+    #Check if we can do a better thumbnail
+    better_thumbnail = dev.best_thumbnail(snippet)
+    if(better_thumbnail != False):
+        thumbnail = better_thumbnail
+    if thumbnail == False:
         thumbnail = ''
+        
     dev.log('The thumbnail now: '+thumbnail)
+    
+    
     #Check what the better description is
     if len(res['description']) > 0:
         description = res['description']
@@ -387,6 +367,7 @@ def xml_build_new_playlist(id, type=''):
         updateevery = dev.getAddonSetting("default_updateevery", 'every 12 hours')
         updateat = dev.getAddonSetting("default_updateat", '23:59')
         update_gmt = dev.getAddonSetting("default_update_gmt", '99')
+        download_videos = dev.getAddonSetting("default_download_videos", '0')
         
         
         #Build the playlist
@@ -431,6 +412,7 @@ def xml_build_new_playlist(id, type=''):
                 #Scan Settings
                 'lastvideoId'       : '',
                 'reverse'           : '0',
+                'download_videos'    : download_videos,
             }
         }
         return playlist
@@ -457,7 +439,7 @@ def xml_build_new_playlist(id, type=''):
         update_gmt = dev.getAddonSetting("default_movies_update_gmt", '99')
         set = dev.getAddonSetting("default_movies_set", '')
         smart_search = dev.getAddonSetting("default_movies_smart_search", '1')
-        
+        download_videos = dev.getAddonSetting("default_movies_download_videos", '0')
         
         #Build the playlist
         playlist = {
@@ -503,7 +485,8 @@ def xml_build_new_playlist(id, type=''):
                 'removedescription' : removedescription,
                 #Scan Settings
                 'lastvideoId'       : '',
-                'reverse'           : ''
+                'reverse'           : '',
+                'download_videos'           : download_videos,
             }
         }
         return playlist
@@ -546,6 +529,7 @@ def xml_build_new_playlist(id, type=''):
         updateevery = dev.getAddonSetting("default_musicvideo_updateevery", 'every 12 hours')
         updateat = dev.getAddonSetting("default_musicvideo_updateat", '23:59')
         update_gmt = dev.getAddonSetting("default_musicvideo_update_gmt", '99')
+        download_videos = dev.getAddonSetting("default_download_videos", '0')
         
         #Build the playlist
         playlist = {
@@ -607,6 +591,7 @@ def xml_build_new_playlist(id, type=''):
                 #Scan Settings
                 'lastvideoId'       : '',
                 'reverse'           : '',
+                'download_videos'   : download_videos,
             }
         }
         return playlist
@@ -831,3 +816,4 @@ def playlist_add_episode(playlist, season, id, season_tag='season', type=''):
     dev.log('Added the episode '+id+' to '+season_tag+': '+season+' in '+dev.typeEpnr(type)+'/'+playlist+'.xml')
     #else:
         #dev.log('playlist_add_episode: not added episode '+id+' since the episode already exists')    
+

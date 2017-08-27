@@ -13,6 +13,7 @@
     <string id="30103">Play videos from library with</string>	
     <string id="30104">Debug Mode</string>
 	<string id="30105">Mode</string>
+	<string id="30106">Max quality for downloads</string>
 	<!--Library Settings-->
 	<string id="30201">Run the service every X minutes</string>
     <string id="30202">Update Video Library after updating new youtube vids</string>
@@ -40,6 +41,7 @@
     <string id="30316">Update every</string>
     <string id="30317">Update at HH:MM</string>
     <string id="30318">Timezone</string>
+    <string id="30319">Download Videos</string>
     <!--Default MusicVideo Settings-->
     <string id="30401">Default settings for Music Videos</string>
     <string id="30402">Generate NFO files</string>
@@ -71,6 +73,7 @@
     <string id="30463">Skip Live Videos</string>
     <string id="30464">Skip Album Videos</string>
     <string id="30465">Skip Audio Only Videos</string>
+    <string id="30466">Download Videos</string>
 	    <!--Default Movies Settings-->
     <string id="30501">Default settings for Movies</string>
     <string id="30502">Generate NFO files</string>
@@ -94,6 +97,7 @@
     <string id="30520">Use YT image</string>
     <string id="30521">Smart Search</string>
     <string id="30522">Reverse</string>
+    <string id="30523">Download Videos</string>
 
 	
 	
@@ -142,6 +146,7 @@
 	<string id="31006">Update Now</string>
 	<string id="31007">Delete playlist</string>
 	<string id="31029">Refresh playlist</string>
+	<string id="31030">Refresh Artwork</string>
 	<!-- Add playlist -->
 	<string id="31010">Press Ok to add this playlist to your list of Youtube Kodi</string>
 	

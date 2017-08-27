@@ -28,7 +28,7 @@ class Generator:
         Load the configuration
         """
         self.config = SafeConfigParser()
-        self.config.read('C:\Kodi16\config.ini')
+        self.config.read('config.ini')
         
         self.tools_path=os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__))))
         self.output_path="_" + self.config.get('locations', 'output_path')
